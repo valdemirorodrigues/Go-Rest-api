@@ -11,7 +11,7 @@ type products struct {
 	db *sql.DB
 }
 
-func CreateProductCreateProduct(product model.Product) (uint64, error) {
+func CreateProduct(product model.Product) (uint64, error) {
 	db, err := database.Connection()
 	if err != nil {
 		return 0, err

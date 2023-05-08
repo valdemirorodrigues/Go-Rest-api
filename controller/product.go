@@ -28,7 +28,7 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ID, err := service.CreateProductCreateProduct(product); err != nil {
+	if ID, err := service.CreateProduct(product); err != nil {
 		if err != nil {
 
 			w.WriteHeader(http.StatusInternalServerError)
