@@ -1,21 +1,22 @@
 package service
 
 import (
-	"database/sql"
-	"go-api-meli/database"
 	"go-api-meli/model"
 	"go-api-meli/repository"
 )
 
-type products struct {
-	db *sql.DB
+type ProductService interface {
+	CreateProduct(product model.Product) (uint64, error)
+}
+type productService struct {
+	Repository repository.Repository
 }
 
-func CreateProduct(product model.Product) (uint64, error) {
-	db, err := database.Connection()
-	if err != nil {
-		return 0, err
+func NewProductService(repo repository.Repository) productService {
+	return productService{
+		Repository: repo,
 	}
-
-	return repository.RepositoryProduct(db).CreateProduct(product)
+}
+func (pr productService) CreateProduct(product model.Product) (uint64, error) {
+	return pr.Repository.CreateProduct(product)
 }

@@ -14,7 +14,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateProduct(w http.ResponseWriter, r *http.Request) {
+type ProductController interface {
+	CreateProduct(w http.ResponseWriter, r *http.Request)
+}
+type productController struct {
+	ProductService service.ProductService
+}
+
+func NewProductController(service service.ProductService) productController {
+	return productController{
+		ProductService: service,
+	}
+}
+func (service productController) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	request, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -28,7 +40,7 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ID, err := service.CreateProduct(product); err != nil {
+	if ID, err := service.ProductService.CreateProduct(product); err != nil {
 		if err != nil {
 
 			w.WriteHeader(http.StatusInternalServerError)
