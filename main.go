@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"go-api-meli/controller"
+	"go-api-meli/database"
+	"go-api-meli/repository"
+	"go-api-meli/service"
 	"log"
 	"net/http"
 
@@ -10,8 +13,16 @@ import (
 )
 
 func main() {
+
+	build := buildControllers()
+	routers(build)
+
+}
+
+func routers(controllers *Controllers) {
+
 	router := mux.NewRouter()
-	router.HandleFunc("/products", controller.CreateProduct).Methods(http.MethodPost)
+	router.HandleFunc("/products", controllers.productController.CreateProduct).Methods(http.MethodPost)
 	router.HandleFunc("/products", controller.GetProducts).Methods(http.MethodGet)
 	router.HandleFunc("/products/{productID}", controller.GetProductById).Methods(http.MethodGet)
 	router.HandleFunc("/products/{productID}", controller.UpdateProduct).Methods(http.MethodPut)
@@ -22,4 +33,17 @@ func main() {
 
 	fmt.Println("servidor rodando")
 	log.Fatal(http.ListenAndServe(":5000", router))
+}
+
+type Controllers struct {
+	productController controller.ProductController
+}
+
+func buildControllers() *Controllers {
+	db, _ := database.Connection()
+	productRepository := repository.NewProductRepository(db)
+	productService := service.NewProductService(productRepository)
+	return &Controllers{
+		productController: controller.NewProductController(productService),
+	}
 }

@@ -9,12 +9,16 @@ type products struct {
 	db *sql.DB
 }
 
-func RepositoryProduct(db *sql.DB) *products {
-	return &products{db}
+type Repository interface {
+	CreateProduct(product model.Product) (uint64, error)
 }
 
-func (products products) CreateProduct(product model.Product) (uint64, error) {
-	statement, err := products.db.Prepare(
+func NewProductRepository(db *sql.DB) *products {
+	return &products{db}
+}
+func (p products) CreateProduct(product model.Product) (uint64, error) {
+
+	statement, err := p.db.Prepare(
 		"insert into tb_product (title, price, quantity) values (?,?,?)",
 	)
 	if err != nil {
@@ -36,8 +40,8 @@ func (products products) CreateProduct(product model.Product) (uint64, error) {
 	return uint64(ID), nil
 
 }
-func (product products) GetAll() ([]model.Product, error) {
-	rows, err := product.db.Query("select * from tb_product")
+func (p products) GetAll() ([]model.Product, error) {
+	rows, err := p.db.Query("select * from tb_product")
 	if err != nil {
 		return nil, err
 
@@ -59,8 +63,8 @@ func (product products) GetAll() ([]model.Product, error) {
 	return products, nil
 
 }
-func (product products) GetById(ID uint64) (model.Product, error) {
-	row, err := product.db.Query("select idtb_product, title, price, quantity from tb_product where idtb_product = ?", ID)
+func (p products) GetById(ID uint64) (model.Product, error) {
+	row, err := p.db.Query("select idtb_product, title, price, quantity from tb_product where idtb_product = ?", ID)
 	if err != nil {
 		return model.Product{}, err
 	}
@@ -82,8 +86,8 @@ func (product products) GetById(ID uint64) (model.Product, error) {
 	return prd, nil
 }
 
-func (product products) UpdateProduct(ID uint64, products model.Product) error {
-	statement, err := product.db.Prepare("update tb_product set title = ?, price = ?, quantity = ? where idtb_product = ? ")
+func (p products) UpdateProduct(ID uint64, products model.Product) error {
+	statement, err := p.db.Prepare("update tb_product set title = ?, price = ?, quantity = ? where idtb_product = ? ")
 	if err != nil {
 		return err
 	}
@@ -97,8 +101,8 @@ func (product products) UpdateProduct(ID uint64, products model.Product) error {
 	return nil
 
 }
-func (product products) Delete(ID uint64) error {
-	statement, err := product.db.Prepare("delete from tb_product where idtb_product = ? ")
+func (p products) Delete(ID uint64) error {
+	statement, err := p.db.Prepare("delete from tb_product where idtb_product = ? ")
 	if err != nil {
 		return err
 	}
