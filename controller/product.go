@@ -3,9 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"go-api-meli/database"
 	"go-api-meli/model"
-	"go-api-meli/repository"
 	"go-api-meli/service"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +14,13 @@ import (
 
 type ProductController interface {
 	CreateProduct(w http.ResponseWriter, r *http.Request)
+	GetProducts(w http.ResponseWriter, r *http.Request)
+	GetProductById(w http.ResponseWriter, r *http.Request)
+	DeleteProduct(w http.ResponseWriter, r *http.Request)
+	UpdateProduct(w http.ResponseWriter, r *http.Request)
 }
+
+// injetando o service no controller
 type productController struct {
 	ProductService service.ProductService
 }
@@ -53,17 +57,9 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 
 	}
 }
-func GetProducts(w http.ResponseWriter, r *http.Request) {
-	db, err := database.Connection()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+func (service productController) GetProducts(w http.ResponseWriter, r *http.Request) {
 
-	defer db.Close()
-
-	repository := repository.RepositoryProduct(db)
-	product, err := repository.GetAll()
+	product, err := service.ProductService.GetAll()
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -74,7 +70,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetProductById(w http.ResponseWriter, r *http.Request) {
+func (service productController) GetProductById(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	ID, err := strconv.ParseUint(paramters["productID"], 10, 32)
 	if err != nil {
@@ -82,16 +78,7 @@ func GetProductById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := database.Connection()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defer db.Close()
-
-	repository := repository.RepositoryProduct(db)
-	product, err := repository.GetById(ID)
+	product, err := service.ProductService.GetById(ID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -101,7 +88,7 @@ func GetProductById(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+func (service productController) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	ID, err := strconv.ParseInt(paramters["productID"], 10, 32)
 	if err != nil {
@@ -122,16 +109,7 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := database.Connection()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defer db.Close()
-
-	repository := repository.RepositoryProduct(db)
-	if err = repository.UpdateProduct(uint64(ID), product); err != nil {
+	if err = service.ProductService.UpdateProduct(uint64(ID), product); err != nil {
 		w.Write([]byte(fmt.Sprintf("Error when updating product.")))
 		return
 	}
@@ -140,26 +118,14 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("Product updated successfully.")))
 }
 
-func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func (service productController) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, err := strconv.ParseInt(paramters["productID"], 10, 32)
+	ID, err := strconv.ParseUint(paramters["productID"], 10, 32)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	db, err := database.Connection()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	repository := repository.RepositoryProduct(db)
-	if err = repository.Delete(uint64(ID)); err != nil {
-		w.Write([]byte(fmt.Sprintf("Error deleting productt.")))
-		return
-	}
-
-	defer db.Close()
+	service.ProductService.DeleteProduct(uint64(ID))
 
 	w.WriteHeader(http.StatusNoContent)
 	w.Write([]byte(fmt.Sprintf("Product deleted successfully.")))

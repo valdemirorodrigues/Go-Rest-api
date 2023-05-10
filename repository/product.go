@@ -11,6 +11,10 @@ type products struct {
 
 type Repository interface {
 	CreateProduct(product model.Product) (uint64, error)
+	GetAll() ([]model.Product, error)
+	GetById(ID uint64) (model.Product, error)
+	DeleteProduct(ID uint64) error
+	UpdateProduct(ID uint64, products model.Product) error
 }
 
 func NewProductRepository(db *sql.DB) *products {
@@ -101,7 +105,7 @@ func (p products) UpdateProduct(ID uint64, products model.Product) error {
 	return nil
 
 }
-func (p products) Delete(ID uint64) error {
+func (p products) DeleteProduct(ID uint64) error {
 	statement, err := p.db.Prepare("delete from tb_product where idtb_product = ? ")
 	if err != nil {
 		return err
