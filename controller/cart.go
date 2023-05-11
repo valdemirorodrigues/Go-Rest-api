@@ -15,6 +15,7 @@ import (
 type CartController interface {
 	AddProductToCart(w http.ResponseWriter, r *http.Request)
 	GetCartById(w http.ResponseWriter, r *http.Request)
+	CartFinallity(w http.ResponseWriter, r *http.Request)
 }
 
 type cartController struct {
@@ -68,16 +69,16 @@ func (service cartController) GetCartById(w http.ResponseWriter, r *http.Request
 	return
 }
 
-/*
-func CartFinallity(w http.ResponseWriter, r *http.Request) {
-
+func (service cartController) CartFinallity(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	ID, _ := strconv.ParseUint(paramters["id"], 10, 32)
 
-	row, err := db.Query("select * from tb_product p join tb_cart c on p.idtb_product = c.idtb_product where c.idtb_cart = ?", ID)
+	row, err := service.CartService.CartFinallity(ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return
+
 	}
+	json.NewEncoder(w).Encode(row)
+	w.WriteHeader(http.StatusOK)
+	return
 }
-*/

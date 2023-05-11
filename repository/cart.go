@@ -12,6 +12,7 @@ type cart struct {
 type CartRepository interface {
 	AddProductToCart(cart model.Cart) (uint64, error)
 	GetCartById(ID uint64) (model.Detail, error)
+	CartFinallity(ID uint64) (model.Detail, error)
 }
 
 func NewCartRepository(db *sql.DB) *cart {
@@ -44,6 +45,29 @@ func (c cart) AddProductToCart(cart model.Cart) (uint64, error) {
 
 func (c cart) GetCartById(ID uint64) (model.Detail, error) {
 	row, err := c.db.Query("select idtb_cart, quantity from tb_cart where idtb_cart = ?", ID)
+	if err != nil {
+		return model.Detail{}, err
+	}
+	defer row.Close()
+
+	var cart model.Detail
+	if row.Next() {
+		row.Scan(&cart.IdProduct, &cart.Quantity)
+	}
+
+	return cart, nil
+
+}
+func (c cart) CartFinallity(ID uint64) (model.Detail, error) {
+	row, err := c.db.Query(`select
+	p.title, 
+	p.quantity AS qtd_estoque, 
+	c.quantity AS qtd_vendida, 
+	c.date 
+	from tb_product p 
+	join tb_cart c 
+	on p.idtb_product = c.idtb_product 
+	where c.idtb_cart = ?`, ID)
 	if err != nil {
 		return model.Detail{}, err
 	}

@@ -13,7 +13,7 @@ type products struct {
 type CartService interface {
 	AddProductToCart(cart model.Cart) (uint64, error)
 	GetCartById(ID uint64) (model.Detail, error)
-	//CartFinallity(ID uint64) model.Cart
+	CartFinallity(ID uint64) (model.Detail, error)
 }
 type cartService struct {
 	Repository repository.CartRepository
@@ -29,4 +29,8 @@ func (cs cartService) AddProductToCart(cart model.Cart) (uint64, error) {
 }
 func (cs cartService) GetCartById(ID uint64) (model.Detail, error) {
 	return cs.Repository.GetCartById(ID)
+}
+func (cs cartService) CartFinallity(ID uint64) (model.Detail, error) {
+	return cs.Repository.CartFinallity(ID)
+
 }
