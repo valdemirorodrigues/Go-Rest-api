@@ -31,6 +31,7 @@ func routers(controllers *Controllers) {
 	router.HandleFunc("/cart", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
 
 	router.HandleFunc("/cart/{id}", controllers.cartController.GetCartById).Methods(http.MethodGet)
+	router.HandleFunc("/cart/finallity/{id}", controllers.cartController.CartFinallity).Methods(http.MethodGet)
 
 	fmt.Println("servidor rodando")
 	log.Fatal(http.ListenAndServe(":5000", router))

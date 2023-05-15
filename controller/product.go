@@ -125,7 +125,10 @@ func (service productController) DeleteProduct(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	service.ProductService.DeleteProduct(uint64(ID))
+	if err = service.ProductService.DeleteProduct(uint64(ID)); err != nil {
+		w.Write([]byte(fmt.Sprintf("Error deleting product.")))
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 	w.Write([]byte(fmt.Sprintf("Product deleted successfully.")))
