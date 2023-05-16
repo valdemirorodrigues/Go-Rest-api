@@ -46,21 +46,17 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if ID, err := service.ProductService.CreateProduct(product); err != nil {
-		fmt.Println(ID, err)
-		if err != nil {
-
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		json.NewEncoder(w).Encode(product)
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
-
+	ID, err := service.ProductService.CreateProduct(product)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
+
 }
+
 func (service productController) GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	product, err := service.ProductService.GetAll()

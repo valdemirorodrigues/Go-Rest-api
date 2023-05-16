@@ -29,6 +29,7 @@ func (c cart) AddProductToCart(cart model.Cart) (uint64, error) {
 		statement, _ := c.db.Prepare("insert into tb_cart (idtb_product, quantity) values (?,?)")
 
 		defer statement.Close()
+
 		result, err := statement.Exec(products.ID_product, products.Quantity)
 		if err != nil {
 			return 0, err
@@ -38,6 +39,7 @@ func (c cart) AddProductToCart(cart model.Cart) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
+		fmt.Println(products.ID_product)
 
 		return uint64(ID), nil
 	}
@@ -123,5 +125,25 @@ func (c cart) Purchase(Result, ID uint64) error {
 
 	}
 	return nil
+
+}
+
+// vai receber o id do produto e do carrinho via postman
+func (c cart) InsertTbcartTbProduct(codeTbProduct int64, codeTbCart int64) (uint64, error) {
+
+	statement, _ := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
+
+	defer statement.Close()
+	result, err := statement.Exec(codeTbProduct, codeTbCart)
+	if err != nil {
+		return 0, err
+	}
+
+	ID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(ID), nil
 
 }

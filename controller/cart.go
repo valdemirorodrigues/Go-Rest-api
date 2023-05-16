@@ -40,21 +40,20 @@ func (service cartController) AddProductToCart(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if ID, err := service.CartService.AddProductToCart(cart); err != nil {
-		if err != nil {
-
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
+	ID, err := service.CartService.AddProductToCart(cart)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
-
 	}
+	/*
+		for _, products := range cart.Products {
+			fmt.Println("-------", products.ID_product)
+		}
+	*/
 
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("Cart id %d", ID)))
 }
-
 func (service cartController) GetCartById(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	ID, _ := strconv.ParseUint(paramters["id"], 10, 32)
