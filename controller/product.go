@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var id int
+
 type ProductController interface {
 	CreateProduct(w http.ResponseWriter, r *http.Request)
 	GetProducts(w http.ResponseWriter, r *http.Request)
@@ -45,6 +47,7 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 	}
 
 	if ID, err := service.ProductService.CreateProduct(product); err != nil {
+		fmt.Println(ID, err)
 		if err != nil {
 
 			w.WriteHeader(http.StatusInternalServerError)
@@ -56,6 +59,7 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 		w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
 
 	}
+
 }
 func (service productController) GetProducts(w http.ResponseWriter, r *http.Request) {
 

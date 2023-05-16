@@ -6,7 +6,7 @@ import (
 )
 
 type ProductService interface {
-	CreateProduct(product model.Product) (uint64, error)
+	CreateProduct(product model.Product) (int64, error)
 	GetAll() ([]model.Product, error)
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
@@ -21,7 +21,7 @@ func NewProductService(repo repository.Repository) productService {
 		Repository: repo,
 	}
 }
-func (pr productService) CreateProduct(product model.Product) (uint64, error) {
+func (pr productService) CreateProduct(product model.Product) (int64, error) {
 	return pr.Repository.CreateProduct(product)
 }
 func (pr productService) GetAll() ([]model.Product, error) {

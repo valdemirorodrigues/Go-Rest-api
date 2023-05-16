@@ -28,8 +28,3 @@ func (cs cartService) GetCartById(ID uint64) (model.CartFinallity, error) {
 func (cs cartService) CartFinallity(ID uint64) (model.Purchase, error) {
 	return cs.Repository.CartFinallity(ID)
 }
-
-//func (cs cartService) CartFinallity(ID uint64) (model.Detail, error) {
-//return cs.Repository.CartFinallity(ID)
-
-//}

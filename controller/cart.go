@@ -47,12 +47,12 @@ func (service cartController) AddProductToCart(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		json.NewEncoder(w).Encode(cart)
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
-
 		return
+
 	}
+
 }
 
 func (service cartController) GetCartById(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +73,7 @@ func (service cartController) CartFinallity(w http.ResponseWriter, r *http.Reque
 	paramters := mux.Vars(r)
 	ID, _ := strconv.ParseUint(paramters["id"], 10, 32)
 
-	row, err := service.CartService.CartFinallity(ID)
+	row, err := service.CartService.CartFinallity(uint64(ID))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 

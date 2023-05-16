@@ -9,8 +9,9 @@ type Cart struct {
 	Products []Detail
 }
 type CartFinallity struct {
+	IDProduct       string `json: "idtb_product"`
+	IDCat           string `json: "idtb_cart"`
 	Item            string `json: "item"`
-	QuantityInStock int64  `json: "QuantityInStock"`
 	QuantityInItems int64  `json: "QuantityInItems"`
 	DateOfPurchase  string `json: "DateOfPurchase"`
 }

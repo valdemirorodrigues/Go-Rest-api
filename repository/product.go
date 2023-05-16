@@ -10,7 +10,7 @@ type products struct {
 }
 
 type Repository interface {
-	CreateProduct(product model.Product) (uint64, error)
+	CreateProduct(product model.Product) (int64, error)
 	GetAll() ([]model.Product, error)
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
@@ -20,7 +20,7 @@ type Repository interface {
 func NewProductRepository(db *sql.DB) *products {
 	return &products{db}
 }
-func (p products) CreateProduct(product model.Product) (uint64, error) {
+func (p products) CreateProduct(product model.Product) (int64, error) {
 
 	statement, err := p.db.Prepare(
 		"insert into tb_product (title, price, quantity) values (?,?,?)",
@@ -37,11 +37,12 @@ func (p products) CreateProduct(product model.Product) (uint64, error) {
 	}
 
 	ID, err := result.LastInsertId()
+
 	if err != nil {
 		return 0, err
 	}
 
-	return uint64(ID), nil
+	return ID, err
 
 }
 func (p products) GetAll() ([]model.Product, error) {
