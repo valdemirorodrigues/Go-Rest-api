@@ -6,7 +6,7 @@ import (
 	"go-api-meli/model"
 )
 
-var QuantityInItems, QuantityInStock, Result int64
+var QuantityInItems, QuantityInStock, Result, ValueFinal int64
 
 type cart struct {
 	db *sql.DB
@@ -16,7 +16,8 @@ type CartRepository interface {
 	AddProductToCart(cart model.Cart) (uint64, error)
 	GetCartById(ID uint64) (model.CartFinallity, error)
 	CartFinallity(ID uint64) (model.Purchase, error)
-	Purchase(Result, ID uint64) error
+	Purchase(Result, ValueFinal, ID uint64) error
+	InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
 }
 
 func NewCartRepository(db *sql.DB) *cart {
@@ -76,18 +77,21 @@ func (c cart) GetCartById(ID uint64) (model.CartFinallity, error) {
 	return cart, nil
 
 }
+
+// selecionar carrinho final passando o id da tb_cart_tb_produc
 func (c cart) CartFinallity(ID uint64) (model.Purchase, error) {
 
 	row, err := c.db.Query(`select 
-	p.quantity as QuantityStock,
-	c.quantity as QuantityItems
-	from 
-	tb_product p
-	join tb_cart_tb_product cp
-	on cp.codetb_product = p.idtb_product
-	join tb_cart c
-	on c.idtb_cart = cp.codetb_cart
-	where cp.idtb_cart_tb_produc = ?`, ID)
+		p.quantity as QuantityStock,
+		c.quantity as QuantityItems,
+		p.price 
+		from 
+		tb_product p
+		join tb_cart_tb_product cp
+		on cp.codetb_product = p.idtb_product
+		join tb_cart c
+		on c.idtb_cart = cp.codetb_cart
+		where cp.idtb_cart_tb_produc = ?`, ID)
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -95,17 +99,19 @@ func (c cart) CartFinallity(ID uint64) (model.Purchase, error) {
 
 	var cart model.Purchase
 	if row.Next() {
-		row.Scan(&cart.QuantityStock, &cart.QuantityItems)
+		row.Scan(&cart.QuantityStock, &cart.QuantityItems, &cart.PriceFinal)
 	}
 	Result = cart.QuantityStock - cart.QuantityItems
-	fmt.Println(Result)
-	c.Purchase(uint64(Result), ID)
+	ValueFinal = cart.QuantityItems * cart.PriceFinal
+	fmt.Println(Result, ValueFinal)
+	c.Purchase(uint64(Result), uint64(ValueFinal), ID)
 
 	return cart, nil
 
 }
 
-func (c cart) Purchase(Result, ID uint64) error {
+// vai atualizar a coluna de quantidade na tb_product e o preco na tb_cart
+func (c cart) Purchase(Result, ValueFinal, ID uint64) error {
 	statement, err := c.db.Prepare(
 		`update tb_product p
 	join tb_cart_tb_product cp
@@ -113,13 +119,14 @@ func (c cart) Purchase(Result, ID uint64) error {
 	join tb_cart c
 	on c.idtb_cart = cp.codetb_cart
 	set p.quantity = ?
+	c.price_final = ?
 	where cp.idtb_cart_tb_produc = ? `)
 	if err != nil {
 		return err
 	}
 	defer statement.Close()
 
-	_, err = statement.Exec(Result, ID)
+	_, err = statement.Exec(Result, ValueFinal, ID)
 	if err != nil {
 		return err
 
@@ -129,11 +136,14 @@ func (c cart) Purchase(Result, ID uint64) error {
 }
 
 // vai receber o id do produto e do carrinho via postman
-func (c cart) InsertTbcartTbProduct(codeTbProduct int64, codeTbCart int64) (uint64, error) {
+func (c cart) InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error) {
 
-	statement, _ := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
-
+	statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
+	if err != nil {
+		return 0, err
+	}
 	defer statement.Close()
+
 	result, err := statement.Exec(codeTbProduct, codeTbCart)
 	if err != nil {
 		return 0, err
@@ -144,6 +154,6 @@ func (c cart) InsertTbcartTbProduct(codeTbProduct int64, codeTbCart int64) (uint
 		return 0, err
 	}
 
-	return uint64(ID), nil
+	return uint64(ID), err
 
 }

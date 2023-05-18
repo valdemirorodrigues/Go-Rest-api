@@ -16,6 +16,7 @@ type CartController interface {
 	AddProductToCart(w http.ResponseWriter, r *http.Request)
 	GetCartById(w http.ResponseWriter, r *http.Request)
 	CartFinallity(w http.ResponseWriter, r *http.Request)
+	InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request)
 }
 
 type cartController struct {
@@ -80,4 +81,26 @@ func (service cartController) CartFinallity(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(row)
 	w.WriteHeader(http.StatusOK)
 	return
+}
+func (service cartController) InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request) {
+	paramters := mux.Vars(r)
+	codeTbProduct, err := strconv.ParseUint(paramters["codeTbProduct"], 10, 32)
+	if err != nil {
+		w.Write([]byte(fmt.Sprintf("error processing product id")))
+		return
+	}
+	codeTbCart, _ := strconv.ParseUint(paramters["codeTbCart"], 10, 32)
+	if err != nil {
+		w.Write([]byte(fmt.Sprintf("error processing cart id")))
+		return
+	}
+
+	ID, err := service.CartService.InsertTbcartTbProduct(codeTbProduct, codeTbCart)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("Cart created id %d", ID)))
+
 }

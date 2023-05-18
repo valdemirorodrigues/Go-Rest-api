@@ -18,4 +18,5 @@ type CartFinallity struct {
 type Purchase struct {
 	QuantityStock int64 `json: "QuantityInStock"`
 	QuantityItems int64 `json: "QuantityInItems"`
+	PriceFinal    int64 `json: "PriceFina"`
 }

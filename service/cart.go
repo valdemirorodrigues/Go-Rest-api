@@ -9,6 +9,7 @@ type CartService interface {
 	AddProductToCart(cart model.Cart) (uint64, error)
 	GetCartById(ID uint64) (model.CartFinallity, error)
 	CartFinallity(ID uint64) (model.Purchase, error)
+	InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
 }
 type cartService struct {
 	Repository repository.CartRepository
@@ -27,4 +28,7 @@ func (cs cartService) GetCartById(ID uint64) (model.CartFinallity, error) {
 }
 func (cs cartService) CartFinallity(ID uint64) (model.Purchase, error) {
 	return cs.Repository.CartFinallity(ID)
+}
+func (cs cartService) InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error) {
+	return cs.Repository.InsertTbcartTbProduct(codeTbProduct, codeTbCart)
 }
