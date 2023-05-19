@@ -15,7 +15,7 @@ import (
 type CartController interface {
 	AddProductToCart(w http.ResponseWriter, r *http.Request)
 	GetCartById(w http.ResponseWriter, r *http.Request)
-	CartFinallity(w http.ResponseWriter, r *http.Request)
+	MakePurchase(w http.ResponseWriter, r *http.Request)
 	InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request)
 }
 
@@ -69,19 +69,24 @@ func (service cartController) GetCartById(w http.ResponseWriter, r *http.Request
 	return
 }
 
-func (service cartController) CartFinallity(w http.ResponseWriter, r *http.Request) {
+func (service cartController) MakePurchase(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, _ := strconv.ParseUint(paramters["id"], 10, 32)
-
-	row, err := service.CartService.CartFinallity(uint64(ID))
+	ID, err := strconv.ParseUint(paramters["cartId"], 10, 32)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	_, err = service.CartService.CartFinallity(ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-
+		return
 	}
-	json.NewEncoder(w).Encode(row)
-	w.WriteHeader(http.StatusOK)
-	return
+	w.Write([]byte(fmt.Sprintf("Compra realizada.")))
+
+	w.WriteHeader(http.StatusAccepted)
+
 }
+
 func (service cartController) InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	codeTbProduct, err := strconv.ParseUint(paramters["codeTbProduct"], 10, 32)

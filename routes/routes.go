@@ -22,7 +22,7 @@ func Routers(controllers *Controllers) {
 	router.HandleFunc("/products/{productID}", controllers.productController.UpdateProduct).Methods(http.MethodPut)
 	router.HandleFunc("/cart", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
 	router.HandleFunc("/cart/{id}", controllers.cartController.GetCartById).Methods(http.MethodGet)
-	router.HandleFunc("/cart/finallity/{id}", controllers.cartController.CartFinallity).Methods(http.MethodGet)
+	router.HandleFunc("/cart/finallity/{cartId}", controllers.cartController.MakePurchase).Methods(http.MethodPost)
 	router.HandleFunc("/cart/{codeTbProduct}/{codeTbCart}", controllers.cartController.InsertTbcartTbProduct).Methods(http.MethodPost)
 
 	fmt.Println("servidor rodando")
