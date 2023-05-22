@@ -16,7 +16,7 @@ type CartController interface {
 	AddProductToCart(w http.ResponseWriter, r *http.Request)
 	GetCartById(w http.ResponseWriter, r *http.Request)
 	MakePurchase(w http.ResponseWriter, r *http.Request)
-	InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request)
+	InsertTbProductTbcart(w http.ResponseWriter, r *http.Request)
 }
 
 type cartController struct {
@@ -41,23 +41,18 @@ func (service cartController) AddProductToCart(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	ID, err := service.CartService.AddProductToCart(cart)
+	shoppingCart, err := service.CartService.AddProductToCart(cart)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	/*
-		for _, products := range cart.Products {
-			fmt.Println("-------", products.ID_product)
-		}
-	*/
-
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf("Cart id %d", ID)))
+	json.NewEncoder(w).Encode(shoppingCart)
+
 }
 func (service cartController) GetCartById(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, _ := strconv.ParseUint(paramters["id"], 10, 32)
+	ID, _ := strconv.ParseUint(paramters["cartID"], 10, 32)
 	cart, err := service.CartService.GetCartById(ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -87,7 +82,7 @@ func (service cartController) MakePurchase(w http.ResponseWriter, r *http.Reques
 
 }
 
-func (service cartController) InsertTbcartTbProduct(w http.ResponseWriter, r *http.Request) {
+func (service cartController) InsertTbProductTbcart(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
 	codeTbProduct, err := strconv.ParseUint(paramters["codeTbProduct"], 10, 32)
 	if err != nil {
@@ -100,7 +95,7 @@ func (service cartController) InsertTbcartTbProduct(w http.ResponseWriter, r *ht
 		return
 	}
 
-	ID, err := service.CartService.InsertTbcartTbProduct(codeTbProduct, codeTbCart)
+	ID, err := service.CartService.InsertTbProductTbcart(codeTbProduct, codeTbCart)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

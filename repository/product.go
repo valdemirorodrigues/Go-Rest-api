@@ -23,7 +23,7 @@ func NewProductRepository(db *sql.DB) *products {
 func (p products) CreateProduct(product model.Product) (int64, error) {
 
 	statement, err := p.db.Prepare(
-		"insert into tb_product (title, price, quantity) values (?,?,?)",
+		"insert into tb_product (title, price, quantity_in_stock) values (?,?,?)",
 	)
 	if err != nil {
 		return 0, err
@@ -31,7 +31,7 @@ func (p products) CreateProduct(product model.Product) (int64, error) {
 
 	defer statement.Close()
 
-	result, err := statement.Exec(product.Title, product.Price, product.Quantity)
+	result, err := statement.Exec(product.Title, product.Price, product.QuantityInStock)
 	if err != nil {
 		return 0, err
 	}
@@ -59,7 +59,7 @@ func (p products) GetAll() ([]model.Product, error) {
 	for rows.Next() {
 		var product model.Product
 
-		if err = rows.Scan(&product.ID, &product.Title, &product.Price, &product.Quantity); err != nil {
+		if err = rows.Scan(&product.ID, &product.Title, &product.Price, &product.QuantityInStock); err != nil {
 			return nil, err
 		}
 
@@ -69,7 +69,7 @@ func (p products) GetAll() ([]model.Product, error) {
 
 }
 func (p products) GetById(ID uint64) (model.Product, error) {
-	row, err := p.db.Query("select idtb_product, title, price, quantity from tb_product where idtb_product = ?", ID)
+	row, err := p.db.Query("select idtb_product, title, price, quantity_in_stock from tb_product where idtb_product = ?", ID)
 	if err != nil {
 		return model.Product{}, err
 	}
@@ -82,7 +82,7 @@ func (p products) GetById(ID uint64) (model.Product, error) {
 			&prd.ID,
 			&prd.Title,
 			&prd.Price,
-			&prd.Quantity,
+			&prd.QuantityInStock,
 		); err != nil {
 			return model.Product{}, err
 
@@ -92,13 +92,13 @@ func (p products) GetById(ID uint64) (model.Product, error) {
 }
 
 func (p products) UpdateProduct(ID uint64, products model.Product) error {
-	statement, err := p.db.Prepare("update tb_product set title = ?, price = ?, quantity = ? where idtb_product = ? ")
+	statement, err := p.db.Prepare("update tb_product set title = ?, price = ?, quantity_in_stock = ? where idtb_product = ? ")
 	if err != nil {
 		return err
 	}
 	defer statement.Close()
 
-	_, err = statement.Exec(&products.Title, &products.Price, &products.Quantity, ID)
+	_, err = statement.Exec(&products.Title, &products.Price, &products.QuantityInStock, ID)
 	if err != nil {
 		return err
 

@@ -14,69 +14,84 @@ type cart struct {
 }
 
 type CartRepository interface {
-	AddProductToCart(cart model.Cart) (uint64, error)
-	GetCartById(ID uint64) (model.CartFinallity, error)
+	AddProductToCart(cart model.Cart) (model.Cart, error)
+	GetCartById(ID uint64) ([]model.Detail, error)
 	CartFinallity(ID uint64) (model.Purchase, error)
 	Purchase(Result, ID uint64) error
-	InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
+	InsertTbProductTbcart(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
 }
 
 func NewCartRepository(db *sql.DB) *cart {
 	return &cart{db}
 }
 
-func (c cart) AddProductToCart(cart model.Cart) (uint64, error) {
+func (c cart) AddProductToCart(cart model.Cart) (model.Cart, error) {
 
 	for _, products := range cart.Products {
-		statement, _ := c.db.Prepare("insert into tb_cart (idtb_product, quantity) values (?,?)")
+		statement, err := c.db.Prepare("insert into tb_cart (id_product, quantity_of_items) values (?,?)")
+		if err != nil {
+			return model.Cart{}, err
+		}
 
 		defer statement.Close()
 
-		result, err := statement.Exec(products.ID_product, products.Quantity)
+		statement.Exec(products.ID_product, products.Quantity)
 		if err != nil {
-			return 0, err
+			return model.Cart{}, err
 		}
-
-		ID, err := result.LastInsertId()
-		if err != nil {
-			return 0, err
-		}
-		fmt.Println(products.ID_product)
-
-		return uint64(ID), nil
 	}
-	return 0, nil
+	return cart, nil
+}
+
+// vai receber o id do produto e do carrinho via postman.
+func (c cart) InsertTbProductTbcart(codeTbProduct uint64, codeTbCart uint64) (uint64, error) {
+
+	statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
+	if err != nil {
+		return 0, err
+	}
+	defer statement.Close()
+
+	result, err := statement.Exec(codeTbProduct, codeTbCart)
+	if err != nil {
+		return 0, err
+	}
+
+	ID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(ID), err
 
 }
 
-func (c cart) GetCartById(ID uint64) (model.CartFinallity, error) {
+func (c cart) GetCartById(ID uint64) ([]model.Detail, error) {
 	row, err := c.db.Query(`select 
-	p.idtb_product, 
 	c.idtb_cart,
-	p.title,
-	c.quantity,
-	c.date 
+	c.quantity_of_items
 	from 
 	tb_product p
 	join tb_cart_tb_product cp
 	on cp.codetb_product = p.idtb_product
 	join tb_cart c
 	on c.idtb_cart = cp.codetb_cart
-	where cp.idtb_cart_tb_produc = ?`, ID)
+	where c.idtb_cart = ?`, ID)
 	if err != nil {
-		return model.CartFinallity{}, err
+		return nil, err
 	}
 	defer row.Close()
 
-	var cart model.CartFinallity
-	if row.Next() {
-		row.Scan(&cart.IDProduct, &cart.IDCat, &cart.Item, &cart.QuantityInItems, &cart.DateOfPurchase)
+	var cart []model.Detail
+	for row.Next() {
+		var crt model.Detail
+
+		if err = row.Scan(&crt.ID_product, &crt.Quantity); err != nil {
+			return nil, err
+		}
+		cart = append(cart, crt)
 	}
-
-	fmt.Println(cart.IDCat, cart.IDProduct)
-
 	return cart, nil
-
 }
 
 // selecionar carrinho final passando o id da tb_cart_tb_produc
@@ -136,28 +151,6 @@ func (c cart) Purchase(Result, ID uint64) error {
 
 }
 
-// vai receber o id do produto e do carrinho via postman
-func (c cart) InsertTbcartTbProduct(codeTbProduct uint64, codeTbCart uint64) (uint64, error) {
-
-	statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
-	if err != nil {
-		return 0, err
-	}
-	defer statement.Close()
-
-	result, err := statement.Exec(codeTbProduct, codeTbCart)
-	if err != nil {
-		return 0, err
-	}
-
-	ID, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return uint64(ID), err
-
-}
 func (c cart) UpdatePurchaseAmount(Result, ID uint64) error {
 
 	statement, err := c.db.Prepare(
