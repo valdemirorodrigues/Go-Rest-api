@@ -1,6 +1,7 @@
 package model
 
 type Detail struct {
+	ID         int64 `json:id`
 	ID_product int64 `json: "id_product"`
 	Quantity   int8  `json: "quantity"`
 }

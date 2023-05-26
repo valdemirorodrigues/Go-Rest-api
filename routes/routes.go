@@ -22,9 +22,9 @@ func Routers(controllers *Controllers) {
 	router.HandleFunc("/products/{productID}", controllers.productController.UpdateProduct).Methods(http.MethodPut)
 
 	router.HandleFunc("/carts", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
-	router.HandleFunc("/carts/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
-	router.HandleFunc("/cart/finallity/{cartId}", controllers.cartController.MakePurchase).Methods(http.MethodPost)
-	router.HandleFunc("/cart/{codeTbProduct}/{codeTbCart}", controllers.cartController.InsertTbProductTbcart).Methods(http.MethodPost)
+	//router.HandleFunc("/carts/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
+	router.HandleFunc("/cart/checkout/{cartId}", controllers.cartController.Checkout).Methods(http.MethodPut)
+	//router.HandleFunc("/cart/{codeTbProduct}/{codeTbCart}", controllers.cartController.InsertTbProductTbcart).Methods(http.MethodPost)
 
 	fmt.Println("servidor rodando")
 	log.Fatal(http.ListenAndServe(":5000", router))

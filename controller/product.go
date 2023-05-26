@@ -110,12 +110,11 @@ func (service productController) UpdateProduct(w http.ResponseWriter, r *http.Re
 	}
 
 	if err = service.ProductService.UpdateProduct(uint64(ID), product); err != nil {
-		w.Write([]byte(fmt.Sprintf("Error when updating product.")))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Product updated successfully.")))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (service productController) DeleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -126,11 +125,10 @@ func (service productController) DeleteProduct(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if err = service.ProductService.DeleteProduct(uint64(ID)); err != nil {
-		w.Write([]byte(fmt.Sprintf("Error deleting product.")))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte(fmt.Sprintf("Product deleted successfully.")))
 
 }
