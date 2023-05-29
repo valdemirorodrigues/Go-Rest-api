@@ -12,8 +12,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var id int
-
 type ProductController interface {
 	CreateProduct(w http.ResponseWriter, r *http.Request)
 	GetProducts(w http.ResponseWriter, r *http.Request)
@@ -46,15 +44,15 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	ID, err := service.ProductService.CreateProduct(product)
+	response, err := service.ProductService.CreateProduct(product)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf("Product id %d", ID)))
-
+	json.NewEncoder(w).Encode(response)
 }
 
 func (service productController) GetProducts(w http.ResponseWriter, r *http.Request) {

@@ -6,22 +6,22 @@ import (
 )
 
 type ProductService interface {
-	CreateProduct(product model.Product) (int64, error)
+	CreateProduct(product model.Product) (*model.ProductResponse, error)
 	GetAll() ([]model.Product, error)
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
 	UpdateProduct(ID uint64, products model.Product) error
 }
 type productService struct {
-	Repository repository.Repository
+	Repository repository.ProductRepository
 }
 
-func NewProductService(repo repository.Repository) productService {
+func NewProductService(repo repository.ProductRepository) productService {
 	return productService{
 		Repository: repo,
 	}
 }
-func (pr productService) CreateProduct(product model.Product) (int64, error) {
+func (pr productService) CreateProduct(product model.Product) (*model.ProductResponse, error) {
 	return pr.Repository.CreateProduct(product)
 }
 func (pr productService) GetAll() ([]model.Product, error) {
