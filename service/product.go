@@ -11,6 +11,7 @@ type ProductService interface {
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
 	UpdateProduct(ID uint64, products model.Product) error
+	Validate(productID uint64) error
 }
 type productService struct {
 	Repository repository.Repository
@@ -35,4 +36,7 @@ func (pr productService) GetById(ID uint64) (model.Product, error) {
 }
 func (pr productService) UpdateProduct(ID uint64, products model.Product) error {
 	return pr.Repository.UpdateProduct(ID, products)
+}
+func (pr productService) Validate(productID uint64) error {
+	return pr.Repository.Validate(productID)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-api-meli/model"
+	"go-api-meli/repository"
 	"go-api-meli/service"
 	"io/ioutil"
 	"net/http"
@@ -20,6 +21,9 @@ type ProductController interface {
 	GetProductById(w http.ResponseWriter, r *http.Request)
 	DeleteProduct(w http.ResponseWriter, r *http.Request)
 	UpdateProduct(w http.ResponseWriter, r *http.Request)
+}
+type productService struct {
+	Repository repository.RepositoryProductValidation
 }
 
 // injetando o service no controller
@@ -75,6 +79,11 @@ func (service productController) GetProductById(w http.ResponseWriter, r *http.R
 	ID, err := strconv.ParseUint(paramters["productID"], 10, 32)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err = service.ProductService.Validate(ID); err == nil {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 

@@ -18,7 +18,7 @@ type CartRepository interface {
 	AddProductToCart(cart model.Cart) (model.Cart, error)
 	GetCartById(ID uint64) ([]model.Detail, error)
 	Checkout(ID uint64) (model.Purchase, error)
-	UpdateInventoryColumn(quantityStock int64, ID uint64) error
+	UpdateInventoryColumn(quantityStock int64, ID int64) error
 	InsertTbProductTbcart(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
 	SubtractOfItems(ID uint64) ([]model.Purchase, error)
 }
@@ -141,6 +141,7 @@ func (c cart) Checkout(ID uint64) (model.Purchase, error) {
 func (c cart) SubtractOfItems(ID uint64) ([]model.Purchase, error) {
 
 	rows, err := c.db.Query(`select
+	p.idtb_product,
 	p.quantity_in_stock - cp.quantity_of_items
 	from
 	tb_product p
@@ -155,30 +156,28 @@ func (c cart) SubtractOfItems(ID uint64) ([]model.Purchase, error) {
 	}
 	defer rows.Close()
 
-	//var products []model.Purchase
+	var products []model.Purchase
 
 	for rows.Next() {
 		var product model.Purchase
 
-		if err = rows.Scan(&product.QuantityStock); err != nil {
+		if err = rows.Scan(&product.ID, &product.QuantityStock); err != nil {
 			return nil, err
 		}
-		fmt.Println(product.QuantityStock)
-		//Stock := []int64{product.QuantityStock}
 
-		//products = append(products, product)
-		c.UpdateInventoryColumn(product.QuantityStock, ID)
+		fmt.Println(product.ID, product.QuantityStock)
+
+		products = append(products, product)
+		c.UpdateInventoryColumn(product.QuantityStock, product.ID)
 
 	}
 
-	return nil, nil
+	return products, nil
 
 }
 
 // vai atualizar a coluna de quantidade realizar um for
-func (c cart) UpdateInventoryColumn(quantityStock int64, ID uint64) error {
-
-	//for _, param := range Stock {
+func (c cart) UpdateInventoryColumn(quantityStock int64, ID int64) error {
 
 	statement, err := c.db.Prepare(
 		`update tb_cart c
@@ -187,7 +186,7 @@ func (c cart) UpdateInventoryColumn(quantityStock int64, ID uint64) error {
 			join tb_product p
 			on p.idtb_product = cp.codetb_product
 			set p.quantity_in_stock = ?
-			where c.idtb_cart = ? `)
+			where p.idtb_product = ? `)
 	if err != nil {
 		return err
 	}
