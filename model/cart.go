@@ -1,13 +1,14 @@
 package model
 
-type Detail struct {
-	ID         int64 `json:id`
-	ID_product int64 `json: "id_product"`
-	Quantity   int8  `json: "quantity"`
+type Details struct {
+	ID         int64   `json:id`
+	Id_Product uint64  `json: "id_product"`
+	Quantity   int8    `json: "quantity"`
+	PriceFinal float64 `json: "PriceFinal"`
 }
 
 type Cart struct {
-	Products []Detail
+	Products []Details `json: "products"`
 }
 type CartFinallity struct {
 	IDProduct       string `json: "idtb_product"`
@@ -20,5 +21,12 @@ type Purchase struct {
 	ID            int64   `json: "id"`
 	QuantityStock int64   `json: "QuantityInStock"`
 	QuantityItems int64   `json: "QuantityInItems"`
-	PriceFinal    float64 `json: "PriceFina"`
+	PriceFinal    float64 `json: "PriceFinal"`
+}
+
+type CartResponse struct {
+	IdCart          uint64  `json: "idtb_cart"`
+	Title           string  `json: "title"`
+	QuantityOfItems uint64  `json: "QuantityOfItems"`
+	PriceFinal      float64 `json: "PriceFinal"`
 }

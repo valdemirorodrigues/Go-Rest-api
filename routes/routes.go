@@ -21,8 +21,8 @@ func Routers(controllers *Controllers) {
 	router.HandleFunc("/products/{productID}", controllers.productController.DeleteProduct).Methods(http.MethodDelete)
 	router.HandleFunc("/products/{productID}", controllers.productController.UpdateProduct).Methods(http.MethodPut)
 
-	router.HandleFunc("/carts", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
-	//router.HandleFunc("/carts/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
+	router.HandleFunc("/cart", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
+	router.HandleFunc("/cart/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
 	router.HandleFunc("/cart/checkout/{cartId}", controllers.cartController.Checkout).Methods(http.MethodPut)
 	//router.HandleFunc("/cart/{codeTbProduct}/{codeTbCart}", controllers.cartController.InsertTbProductTbcart).Methods(http.MethodPost)
 
@@ -40,7 +40,7 @@ func BuildControllers() *Controllers {
 	productRepository := repository.NewProductRepository(db)
 	productService := service.NewProductService(productRepository)
 	cartRepository := repository.NewCartRepository(db)
-	cartService := service.NewCartService(cartRepository)
+	cartService := service.NewCartService(cartRepository, productRepository)
 	return &Controllers{
 		productController: controller.NewProductController(productService),
 		cartController:    controller.NewCartController(cartService),
