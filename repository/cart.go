@@ -146,14 +146,14 @@ func (c cart) SubtractOfItems(idCart uint64) (int64, error) {
 // vai atualizar a coluna de quantidade realizar um for
 func (c cart) UpdateInventoryColumn(quantity int64, idCart uint64) error {
 
-	statement, err := c.db.Prepare(
+  statement, err := c.db.Prepare(
 		`update tb_cart c
 			join tb_cart_tb_product cp
 			on cp.codetb_cart = c.idtb_cart
 			join tb_product p
 			on p.idtb_product = cp.codetb_product
 			set p.quantity_in_stock = ?
-			where c.idtb_cart = ? `)
+			where p.idtb_product = ? `)
 	if err != nil {
 		return err
 	}

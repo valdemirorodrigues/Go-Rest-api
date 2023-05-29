@@ -15,6 +15,7 @@ type ProductRepository interface {
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
 	UpdateProduct(ID uint64, products model.Product) error
+	Validate(productID uint64) error
 }
 
 func NewProductRepository(db *sql.DB) *products {
@@ -70,6 +71,7 @@ func (p products) GetAll() ([]model.Product, error) {
 
 }
 func (p products) GetById(ID uint64) (model.Product, error) {
+
 	row, err := p.db.Query("select idtb_product, title, price, quantity_in_stock from tb_product where idtb_product = ?", ID)
 	if err != nil {
 		return model.Product{}, err
@@ -119,4 +121,23 @@ func (p products) DeleteProduct(ID uint64) error {
 
 	}
 	return nil
+}
+func (p products) Validate(productID uint64) error {
+	row, err := p.db.Query("select idtb_product from tb_product where idtb_product = ?", productID)
+	if err != nil {
+		return err
+	}
+	defer row.Close()
+
+	var product model.Product
+
+	if row.Next() {
+		if err = row.Scan(
+			&product.ID,
+		); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
