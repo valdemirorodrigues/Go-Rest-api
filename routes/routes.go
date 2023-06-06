@@ -21,9 +21,9 @@ func Routers(controllers *Controllers) {
 	router.HandleFunc("/products/{productID}", controllers.productController.DeleteProduct).Methods(http.MethodDelete)
 	router.HandleFunc("/products/{productID}", controllers.productController.UpdateProduct).Methods(http.MethodPut)
 
-	router.HandleFunc("/cart", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
-	router.HandleFunc("/cart/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
-	router.HandleFunc("/cart/checkout/{cartId}", controllers.cartController.Checkout).Methods(http.MethodPut)
+	router.HandleFunc("/carts", controllers.cartController.AddProductToCart).Methods(http.MethodPost)
+	router.HandleFunc("/carts/{cartID}", controllers.cartController.GetCartById).Methods(http.MethodGet)
+	router.HandleFunc("/carts/{cartId}", controllers.cartController.Checkout).Methods(http.MethodPost)
 	//router.HandleFunc("/cart/{codeTbProduct}/{codeTbCart}", controllers.cartController.InsertTbProductTbcart).Methods(http.MethodPost)
 
 	fmt.Println("servidor rodando")
@@ -43,6 +43,6 @@ func BuildControllers() *Controllers {
 	cartService := service.NewCartService(cartRepository, productRepository)
 	return &Controllers{
 		productController: controller.NewProductController(productService),
-		cartController:    controller.NewCartController(cartService),
+		cartController:    controller.NewCartController(cartService, productService),
 	}
 }

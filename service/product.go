@@ -6,12 +6,12 @@ import (
 )
 
 type ProductService interface {
-	CreateProduct(product model.Product) (*model.ProductResponse, error)
+	CreateProduct(product model.Product) (*model.Product, error)
 	GetAll() ([]model.Product, error)
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
 	UpdateProduct(ID uint64, products model.Product) error
-	Validate(productID uint64) error
+	ProductValidate(productID uint64) (model.Product, error)
 }
 type productService struct {
 	Repository repository.ProductRepository
@@ -22,7 +22,7 @@ func NewProductService(repo repository.ProductRepository) productService {
 		Repository: repo,
 	}
 }
-func (pr productService) CreateProduct(product model.Product) (*model.ProductResponse, error) {
+func (pr productService) CreateProduct(product model.Product) (*model.Product, error) {
 	return pr.Repository.CreateProduct(product)
 }
 func (pr productService) GetAll() ([]model.Product, error) {
@@ -37,6 +37,6 @@ func (pr productService) GetById(ID uint64) (model.Product, error) {
 func (pr productService) UpdateProduct(ID uint64, products model.Product) error {
 	return pr.Repository.UpdateProduct(ID, products)
 }
-func (pr productService) Validate(productID uint64) error {
-	return pr.Repository.Validate(productID)
+func (pr productService) ProductValidate(productID uint64) (model.Product, error) {
+	return pr.Repository.ProductValidate(productID)
 }

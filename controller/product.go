@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-api-meli/model"
-	"go-api-meli/repository"
 	"go-api-meli/service"
 	"io/ioutil"
 	"net/http"
@@ -19,9 +18,6 @@ type ProductController interface {
 	GetProductById(w http.ResponseWriter, r *http.Request)
 	DeleteProduct(w http.ResponseWriter, r *http.Request)
 	UpdateProduct(w http.ResponseWriter, r *http.Request)
-}
-type productService struct {
-	Repository repository.RepositoryProductValidation
 }
 
 // injetando o service no controller
@@ -51,6 +47,8 @@ func (service productController) CreateProduct(w http.ResponseWriter, r *http.Re
 	response, err := service.ProductService.CreateProduct(product)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("There was an error when trying to insert the product.")))
+
 		return
 	}
 
@@ -66,38 +64,37 @@ func (service productController) GetProducts(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	json.NewEncoder(w).Encode(product)
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func (service productController) GetProductById(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, err := strconv.ParseUint(paramters["productID"], 10, 32)
+	IDProduct, err := strconv.ParseUint(paramters["productID"], 10, 32)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err = service.ProductService.Validate(ID); err == nil {
+	result, _ := service.ProductService.ProductValidate(IDProduct)
+	if result.ID != IDProduct {
+		w.Write([]byte(fmt.Sprintf("Product with ID %d,%v", IDProduct, "was not found.")))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	product, err := service.ProductService.GetById(ID)
+	product, err := service.ProductService.GetById(IDProduct)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	json.NewEncoder(w).Encode(product)
 	w.WriteHeader(http.StatusOK)
 }
 
 func (service productController) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, err := strconv.ParseInt(paramters["productID"], 10, 32)
+	ProductID, err := strconv.ParseInt(paramters["productID"], 10, 32)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -116,26 +113,39 @@ func (service productController) UpdateProduct(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err = service.ProductService.UpdateProduct(uint64(ID), product); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	result, _ := service.ProductService.ProductValidate(uint64(ProductID))
+	if result.ID != uint64(ProductID) {
+		w.Write([]byte(fmt.Sprintf("Product with ID %d,%v", ProductID, "was not found.")))
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
+	if err = service.ProductService.UpdateProduct(uint64(ProductID), product); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (service productController) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	paramters := mux.Vars(r)
-	ID, err := strconv.ParseUint(paramters["productID"], 10, 32)
+	productID, err := strconv.ParseUint(paramters["productID"], 10, 32)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err = service.ProductService.DeleteProduct(uint64(ID)); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+
+	result, _ := service.ProductService.ProductValidate(productID)
+	if result.ID != productID {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(fmt.Sprintf("Product with ID %d,%v", productID, "was not found.")))
 		return
 	}
 
+	if err = service.ProductService.DeleteProduct(uint64(productID)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("There was an error when trying to delete the product.")))
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
-
 }

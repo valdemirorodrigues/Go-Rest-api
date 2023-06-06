@@ -10,18 +10,18 @@ type products struct {
 }
 
 type ProductRepository interface {
-	CreateProduct(product model.Product) (*model.ProductResponse, error)
+	CreateProduct(product model.Product) (*model.Product, error)
 	GetAll() ([]model.Product, error)
 	GetById(ID uint64) (model.Product, error)
 	DeleteProduct(ID uint64) error
 	UpdateProduct(ID uint64, products model.Product) error
-	Validate(productID uint64) error
+	ProductValidate(productID uint64) (model.Product, error)
 }
 
 func NewProductRepository(db *sql.DB) *products {
 	return &products{db}
 }
-func (p products) CreateProduct(product model.Product) (*model.ProductResponse, error) {
+func (p products) CreateProduct(product model.Product) (*model.Product, error) {
 
 	statement, err := p.db.Prepare(
 		"insert into tb_product (title, price, quantity_in_stock) values (?,?,?)",
@@ -39,7 +39,8 @@ func (p products) CreateProduct(product model.Product) (*model.ProductResponse, 
 	if err != nil {
 		return nil, err
 	}
-	response := model.ProductResponse{
+	response := model.Product{
+
 		Title:           product.Title,
 		Price:           product.Price,
 		QuantityInStock: product.QuantityInStock,
@@ -122,22 +123,26 @@ func (p products) DeleteProduct(ID uint64) error {
 	}
 	return nil
 }
-func (p products) Validate(productID uint64) error {
-	row, err := p.db.Query("select idtb_product from tb_product where idtb_product = ?", productID)
+func (p products) ProductValidate(productID uint64) (model.Product, error) {
+	row, err := p.db.Query("select idtb_product, title, price, quantity_in_stock from tb_product where idtb_product = ?", productID)
 	if err != nil {
-		return err
+		return model.Product{}, err
 	}
 	defer row.Close()
 
-	var product model.Product
+	var prd model.Product
 
 	if row.Next() {
 		if err = row.Scan(
-			&product.ID,
+			&prd.ID,
+			&prd.Title,
+			&prd.Price,
+			&prd.QuantityInStock,
 		); err != nil {
-			return err
+			return model.Product{}, err
+
 		}
 	}
+	return prd, nil
 
-	return err
 }

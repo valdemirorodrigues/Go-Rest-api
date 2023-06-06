@@ -2,6 +2,9 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
+	_ "errors"
+	"go-api-meli/dto"
 	"go-api-meli/model"
 	"time"
 )
@@ -11,12 +14,14 @@ type cart struct {
 }
 
 type CartRepository interface {
-	AddProductToCart(products []model.Details) error
+	AddProductToCart(cart model.Cart) (model.Cart, error)
 	GetCartById(ID uint64) ([]model.CartResponse, error)
-	Checkout(ID uint64) (model.Purchase, error)
+	Checkout(IDCart uint64) (dto.Checkout, error)
 	UpdateInventoryColumn(quantity int64, idCart uint64) error
-	InsertTbProductTbcart(codeTbProduct uint64, codeTbCart uint64) (uint64, error)
-	SubtractOfItems(ID uint64) (int64, error)
+	SubtractOfItems(IDCart uint64) (float64, int, error)
+	CartValidate(cartID uint64) error
+	UpdateColumnPriceFinal(ID, ValueFinal uint64) (float64, error)
+	CheckoutValidate(cartID uint64) ([]dto.CheckoutValidate, error)
 }
 
 func NewCartRepository(db *sql.DB) *cart {
@@ -24,129 +29,129 @@ func NewCartRepository(db *sql.DB) *cart {
 }
 
 // Adiciona o carrinho com produtos
-func (c cart) AddProductToCart(lp []model.Details) error {
-	var IdCart, err = c.CreateCart()
-	if err != nil {
-		return err
-	}
-	for _, product := range lp {
+func (c cart) AddProductToCart(cart model.Cart) (model.Cart, error) {
+	var IDCart, _ = c.CreateCart()
+	detail := []model.Details{}
 
-		statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart, quantity_of_items,  price_final) values (?, ?,?,?)")
+	for i, products := range cart.Products {
+		for j, prod := range cart.Products {
+			if (i != j) && (prod.IDProduct == products.IDProduct) {
+				products.Quantity += prod.Quantity
+				cart.Products = append(cart.Products[:j], cart.Products[j+1:]...)
 
-		if err != nil {
-			return err
+			}
+
 		}
+		if products.Quantity > 0 {
+			statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart, quantity_of_items) values (?,?,?)")
 
-		defer statement.Close()
+			if err != nil {
+				return model.Cart{}, err
+			}
 
-		statement.Exec(product.Id_Product, IdCart, product.Quantity, product.PriceFinal)
+			defer statement.Close()
+
+			statement.Exec(products.IDProduct, IDCart, products.Quantity)
+			detail = append(detail, model.Details{IDProduct: products.IDProduct, Quantity: products.Quantity})
+		}
 	}
-
-	return nil
-}
-
-// vai receber o id do produto e do carrinho via postman.
-func (c cart) InsertTbProductTbcart(codeTbProduct uint64, codeTbCart uint64) (uint64, error) {
-
-	statement, err := c.db.Prepare("insert into tb_cart_tb_product (codetb_product, codetb_cart) values (?,?)")
-	if err != nil {
-		return 0, err
+	cartResponse := model.Cart{
+		IDCart:   IDCart,
+		Products: detail,
 	}
-	defer statement.Close()
-
-	result, err := statement.Exec(codeTbProduct, codeTbCart)
-	if err != nil {
-		return 0, err
-	}
-
-	ID, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return uint64(ID), err
-
+	return cartResponse, nil
 }
 
 func (c cart) GetCartById(ID uint64) ([]model.CartResponse, error) {
-	row, err := c.db.Query(`select
-	c.idtb_cart,
-	cp.quantity_of_items, 
-	cp.price_final,
-	p.title
-	from
-	tb_product p
-	join tb_cart_tb_product cp
-	on cp.codetb_product = p.idtb_product
-	join tb_cart c
-	on c.idtb_cart = cp.codetb_cart
-	where c.idtb_cart = ?`, ID)
+
+	row, err := c.db.Query(`
+	select 
+    c.idtb_cart, 
+    p.idtb_product,
+	cp.quantity_of_items
+    from tb_cart c
+    join tb_cart_tb_product cp
+    on c.idtb_cart = cp.codetb_cart
+    join tb_product p
+    on p.idtb_product=cp.codetb_product
+    where  c.idtb_cart = ?`, ID)
 	if err != nil {
 		return nil, err
 	}
 	defer row.Close()
 
 	var cart []model.CartResponse
-	for row.Next() {
-		var crt model.CartResponse
 
-		if err = row.Scan(&crt.IdCart, &crt.QuantityOfItems, &crt.PriceFinal, &crt.Title); err != nil {
+	for row.Next() {
+		var c model.CartResponse
+		if err = row.Scan(
+			&c.IdCart,
+			&c.QuantityOfItems,
+			&c.Title,
+		); err != nil {
 			return nil, err
 		}
-		cart = append(cart, crt)
+		cart = append(cart, c)
+
 	}
 	return cart, nil
 }
 
-// Realiza o calculo e retorna o valor total do carrinnho
-func (c cart) Checkout(idCart uint64) (model.Purchase, error) {
+func (c cart) Checkout(IDCart uint64) (dto.Checkout, error) {
 
-	result, err := c.SubtractOfItems(idCart)
+	result, _, err := c.SubtractOfItems(IDCart)
+
 	if err != nil {
-		return model.Purchase{}, err
+		return dto.Checkout{}, err
 	}
 
-	return model.Purchase{QuantityStock: result}, nil
+	return dto.Checkout{Price: result}, nil
 
 }
 
 // Realiza a subtracao dos itens em estoque com os do carrinho
-func (c cart) SubtractOfItems(idCart uint64) (int64, error) {
+func (c cart) SubtractOfItems(IDCart uint64) (float64, int, error) {
 
 	rows, err := c.db.Query(`select
-	p.quantity_in_stock, cp.quantity_of_items
+	p.idtb_product,
+	p.quantity_in_stock, 
+	cp.quantity_of_items,
+	p.price
 	from
 	tb_product p
 	join tb_cart_tb_product cp
 	on cp.codetb_product = p.idtb_product
 	join tb_cart c
 	on c.idtb_cart = cp.codetb_cart
-	where c.idtb_cart = ?`, idCart)
+	where c.idtb_cart = ?`, IDCart)
 	if err != nil {
-		return 0, err
-
+		return 0, 0, err
 	}
+
 	defer rows.Close()
 
-	var sumQuantityFinal int64
+	var stockFinal int64
+	var priceFinal int64
+	var result uint64
 	var product model.Purchase
 	for rows.Next() {
-		if err = rows.Scan(&product.QuantityStock, &product.QuantityItems); err != nil {
-			return 0, err
+		if err = rows.Scan(&product.ID, &product.QuantityStock, &product.QuantityItems, &product.Price); err != nil {
+			return 0, 0, err
 		}
-		sumQuantityFinal += product.QuantityItems
+		priceFinal = product.QuantityItems * int64(product.Price)
+		result += uint64(priceFinal)
+		stockFinal = product.QuantityStock - product.QuantityItems
+		c.UpdateInventoryColumn(stockFinal, uint64(product.ID))
 	}
-	sumQuantityFinal = product.QuantityStock - sumQuantityFinal
-	c.UpdateInventoryColumn(sumQuantityFinal, idCart)
+	price, _ := c.UpdateColumnPriceFinal(IDCart, result)
 
-	return sumQuantityFinal, nil
-
+	return price, int(product.QuantityItems), nil
 }
 
 // vai atualizar a coluna de quantidade realizar um for
 func (c cart) UpdateInventoryColumn(quantity int64, idCart uint64) error {
 
-  statement, err := c.db.Prepare(
+	statement, err := c.db.Prepare(
 		`update tb_cart c
 			join tb_cart_tb_product cp
 			on cp.codetb_cart = c.idtb_cart
@@ -161,6 +166,22 @@ func (c cart) UpdateInventoryColumn(quantity int64, idCart uint64) error {
 	statement.Exec(quantity, idCart)
 
 	return nil
+}
+func (c cart) UpdateColumnPriceFinal(ID, ValueFinal uint64) (float64, error) {
+	statement, err := c.db.Prepare("insert into tb_price_final (idtb_cart, price_final) values (?,?)")
+	if err != nil {
+		return 0, err
+	}
+	defer statement.Close()
+
+	_, err = statement.Exec(ID, ValueFinal)
+	if err != nil {
+		return 0, err
+
+	}
+
+	return float64(ValueFinal), nil
+
 }
 
 func (c cart) CreateCart() (int64, error) {
@@ -186,5 +207,69 @@ func (c cart) CreateCart() (int64, error) {
 	}
 
 	return ID, err
+
+}
+func (c cart) CartValidate(cartID uint64) error {
+	row, err := c.db.Query(`select 
+	count(*)
+    from tb_cart c
+    join tb_cart_tb_product cp
+    on c.idtb_cart = cp.codetb_cart
+    join tb_product p
+    on p.idtb_product=cp.codetb_product
+    where  c.idtb_cart = ?`, cartID)
+	if err != nil {
+		return err
+	}
+	defer row.Close()
+
+	var count int
+	if row.Next() {
+		if err = row.Scan(
+			&count,
+		); err != nil {
+			return err
+
+		}
+	}
+	if count == 0 {
+		return errors.New("carrinho nao encontrado")
+
+	}
+	return nil
+
+}
+func (c cart) CheckoutValidate(cartID uint64) ([]dto.CheckoutValidate, error) {
+	rows, err := c.db.Query(`select 
+	c.idtb_cart, 
+	p.idtb_product,
+	cp.quantity_of_items
+    from tb_cart c
+    join tb_cart_tb_product cp
+    on c.idtb_cart = cp.codetb_cart
+    join tb_product p
+    on p.idtb_product=cp.codetb_product
+    where  c.idtb_cart = ?`, cartID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var carts []dto.CheckoutValidate
+
+	for rows.Next() {
+		var cart dto.CheckoutValidate
+
+		if err = rows.Scan(
+			&cart.IDCart,
+			&cart.IDProduct,
+			&cart.QuantityOfItems,
+		); err != nil {
+			return nil, err
+		}
+		carts = append(carts, cart)
+
+	}
+	return carts, nil
 
 }

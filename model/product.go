@@ -6,9 +6,3 @@ type Product struct {
 	Price           float64 `json: "price"`
 	QuantityInStock int64   `json: "QuantityInStock"`
 }
-
-type ProductResponse struct {
-	Title           string  `json: "title"`
-	Price           float64 `json: "price"`
-	QuantityInStock int64   `json: "QuantityInStock"`
-}
